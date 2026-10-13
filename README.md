@@ -29,7 +29,8 @@ atividade-lamp-wordpress/
 │   ├── 06-virtualhost.sh              # VirtualHost do Apache (porta 80)
 │   ├── 07-https-opcional.sh           # desafio extra: HTTPS autoassinado
 │   ├── 08-testes-logs.sh              # testes com curl e leitura dos logs
-│   └── setup-completo.sh              # executa tudo (01 a 06) de uma vez
+│   ├── 09-finalizar-wordpress.sh      # Parte 7 via WP-CLI (admin + página inicial)
+│   └── setup-completo.sh              # executa tudo (01 a 06 + 09) de uma vez
 ├── config/                            # cópias de referência dos .conf do Apache
 │   ├── wordpress.conf                 # VirtualHost HTTP
 │   ├── wordpress-ssl.conf             # VirtualHost HTTPS
@@ -62,8 +63,17 @@ Copie a pasta `scripts/` para a VM e execute:
 sudo bash scripts/setup-completo.sh
 ```
 
-Depois acesse `http://192.168.56.10/` no navegador da hospedeira e conclua a
-instalação do WordPress (Parte 7).
+Sem flags, ele instala a pilha LAMP (01 a 06) **e** conclui o WordPress
+automaticamente via WP-CLI (09): cria o usuário `admin`, a página dos integrantes
+e a define como página inicial. Depois é só abrir `http://192.168.56.10/`.
+
+Flags disponíveis:
+
+```bash
+sudo bash scripts/setup-completo.sh --https           # + HTTPS autoassinado (07)
+sudo bash scripts/setup-completo.sh --sem-finalizar   # Parte 7 feita no navegador
+sudo bash scripts/setup-completo.sh --help            # ajuda
+```
 
 ### Opção passo a passo (recomendada para a apresentação)
 Rode cada etapa na ordem, explicando o que cada uma faz:
@@ -75,6 +85,7 @@ sudo bash scripts/03-mariadb.sh
 sudo bash scripts/04-php.sh
 sudo bash scripts/05-wordpress.sh
 sudo bash scripts/06-virtualhost.sh
+sudo bash scripts/09-finalizar-wordpress.sh  # Parte 7 (WP-CLI) - OU pelo navegador
 bash      scripts/08-testes-logs.sh          # testes (não precisa de root)
 sudo bash scripts/07-https-opcional.sh       # opcional: HTTPS
 ```
@@ -82,12 +93,19 @@ sudo bash scripts/07-https-opcional.sh       # opcional: HTTPS
 > Os scripts usam `source 00-variaveis.sh`, então funcionam tanto se executados
 > da pasta `scripts/` quanto de outro diretório (desde que a estrutura seja mantida).
 
-### Parte 7 – Finalizar no navegador
-1. Acesse `http://192.168.56.10/` e informe título do site, usuário admin, senha
-   e e-mail.
-2. Crie a página com os nomes dos integrantes (HTML em
-   `docs/05-pagina-integrantes.md`) e defina-a como página inicial
+### Parte 7 – Finalizar a instalação
+Duas formas (escolha uma):
+
+1. **Automática (WP-CLI)** – rode `sudo bash scripts/09-finalizar-wordpress.sh`
+   (já incluída no `setup-completo.sh` por padrão). Ela cria o admin, a página
+   dos integrantes e a define como página inicial.
+2. **Pelo navegador** – acesse `http://192.168.56.10/`, preencha título do site,
+   usuário admin, senha e e-mail; crie a página (HTML em
+   `docs/05-pagina-integrantes.md`) e defina-a como inicial
    (*Configurações → Leitura*).
+
+Credenciais padrão do admin (edite em `scripts/00-variaveis.sh`):
+`admin` / `AdminWordPress123!`.
 
 ---
 
@@ -120,7 +138,7 @@ válido e nunca versione o `wp-config.php` (já está no `.gitignore`).
 | 4 | PHP + módulos | `04-php.sh` |
 | 5 | Download/instalação do WordPress | `05-wordpress.sh` |
 | 6 | VirtualHost do Apache | `06-virtualhost.sh` |
-| 7 | Configuração pelo navegador | (manual, ver docs) |
+| 7 | Configuração (navegador ou WP-CLI) | `09-finalizar-wordpress.sh` |
 | 8 | Testes e logs | `08-testes-logs.sh` |
 | 9 | Captura no Wireshark | `docs/02-wireshark.md` |
 | Extra | HTTPS autoassinado | `07-https-opcional.sh` |

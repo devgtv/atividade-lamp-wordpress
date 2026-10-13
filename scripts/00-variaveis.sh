@@ -24,3 +24,20 @@ export DB_PASS="SenhaForte123!"                         # senha do usuário do b
 # --- Caminhos do WordPress / Apache -------------------------------------------
 export WP_DIR="/var/www/wordpress"                      # onde o WordPress ficará instalado
 export APACHE_SITE="/etc/apache2/sites-available/wordpress.conf"
+
+# --- Site e usuário administrador (Parte 7 - conclusão da instalação) ---------
+export SITE_TITLE="Blog do Grupo ${GRUPO}"
+export ADMIN_USER="admin"
+export ADMIN_PASS="AdminWordPress123!"
+export ADMIN_EMAIL="admin@${DOMINIO}"
+
+# --- Integrantes do grupo (usados na página inicial) --------------------------
+# Troque pelos nomes/matrículas reais. Para mais/menos integrantes, basta
+# adicionar ou remover linhas deste array.
+export MEMBROS=(
+  "Integrante 1 – matrícula"
+  "Integrante 2 – matrícula"
+  "Integrante 3 – matrícula"
+  "Integrante 4 – matrícula"
+  "Integrante 5 – matrícula"
+)

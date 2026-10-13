@@ -2,17 +2,50 @@
 # =============================================================================
 # setup-completo.sh
 # -----------------------------------------------------------------------------
-# Executa TODAS as etapas na ordem correta (01 a 06).
+# Executa TODAS as etapas na ordem correta (01 a 06 e, por padrão, 09).
 # Use na apresentação para mostrar o processo completo, ou em uma VM nova.
 #
-# Uso:  sudo bash setup-completo.sh
+# Uso:
+#   sudo bash setup-completo.sh [opções]
 #
-# Observação: o wp-config.php é gerado automaticamente, mas a conclusão da
-# instalação (título do site, usuário admin, senha) é feita PELO NAVEGADOR
-# na Parte 7 do roteiro.
+# Opções (flags):
+#   --https           Ao final, também habilita HTTPS autoassinado (script 07).
+#   --sem-finalizar   NÃO conclui a instalação pelo WP-CLI (script 09),
+#                     deixando a Parte 7 para ser feita pelo navegador.
+#   -h, --help        Mostra esta ajuda.
+#
+# Sem flags, o comportamento é:
+#   - instala a pilha LAMP (01 a 06);
+#   - conclui o WordPress automaticamente (09): cria admin, a página dos
+#     integrantes e a define como página inicial.
+#
+# Observação: para concluir pelo navegador em vez do WP-CLI, use --sem-finalizar
+# e acesse http://<IP>/wp-admin/install.php.
 # =============================================================================
 
 set -e
+
+# --------------------------- Ajuda / flags -----------------------------------
+FAZ_HTTPS=0
+FAZ_FINALIZAR=1
+
+uso() {
+  sed -n '2,24p' "$0"
+  exit 0
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    --https)          FAZ_HTTPS=1 ;;
+    --sem-finalizar)  FAZ_FINALIZAR=0 ;;
+    -h|--help)        uso ;;
+    *)
+      echo "Opção desconhecida: $arg"
+      echo "Use --help para ver as opções."
+      exit 1
+      ;;
+  esac
+done
 
 # Garante execução como root
 if [ "$(id -u)" -ne 0 ]; then
@@ -30,7 +63,10 @@ echo "  Grupo    : ${GRUPO}"
 echo "  Domínio  : ${DOMINIO}"
 echo "  IP       : ${IP_SERVIDOR}"
 echo "  Banco    : ${DB_NAME} / usuário ${DB_USER}"
+echo "  HTTPS    : $([ "$FAZ_HTTPS" -eq 1 ] && echo sim || echo nao)"
+echo "  Finalizar: $([ "$FAZ_FINALIZAR" -eq 1 ] && echo 'sim (WP-CLI)' || echo 'nao (navegador)')"
 
+# --------------------------- Etapas base (01 a 06) ---------------------------
 for script in \
   01-atualizacao-firewall.sh \
   02-apache.sh \
@@ -46,11 +82,33 @@ do
   bash "${BASE_DIR}/${script}"
 done
 
+# --------------------------- Parte 7 (09) ------------------------------------
+if [ "$FAZ_FINALIZAR" -eq 1 ]; then
+  echo
+  echo "###################################################################"
+  echo "# Executando 09-finalizar-wordpress.sh (Parte 7 via WP-CLI)"
+  echo "###################################################################"
+  bash "${BASE_DIR}/09-finalizar-wordpress.sh"
+fi
+
+# --------------------------- Desafio extra (07) ------------------------------
+if [ "$FAZ_HTTPS" -eq 1 ]; then
+  echo
+  echo "###################################################################"
+  echo "# Executando 07-https-opcional.sh (desafio extra HTTPS)"
+  echo "###################################################################"
+  bash "${BASE_DIR}/07-https-opcional.sh"
+fi
+
 echo
 echo "###################################################################"
 echo "# FINALIZADO!"
 echo "###################################################################"
-echo "Agora acesse no navegador da hospedeira: http://${IP_SERVIDOR}/"
-echo "e conclua a instalação do WordPress (Parte 7 do roteiro)."
-echo
-echo "Opcional (desafio extra HTTPS): sudo bash ${BASE_DIR}/07-https-opcional.sh"
+echo "Acesse no navegador da hospedeira:"
+echo "  http://${IP_SERVIDOR}/"
+[ "$FAZ_HTTPS" -eq 1 ] && echo "  https://${IP_SERVIDOR}/   (certificado autoassinado)"
+if [ "$FAZ_FINALIZAR" -eq 0 ]; then
+  echo "Conclua a instalação pelo navegador (Parte 7): http://${IP_SERVIDOR}/wp-admin/install.php"
+else
+  echo "Login do painel: ${ADMIN_USER} / ${ADMIN_PASS}"
+fi
