@@ -21,6 +21,7 @@ atividade-lamp-wordpress/
 ├── README.md                          # este arquivo
 ├── scripts/                           # scripts comentados, na ordem de execução
 │   ├── 00-variaveis.sh                # variáveis comuns (dados do grupo/banco)
+│   ├── dependencias.sh                # instala TODAS as dependências via apt
 │   ├── 01-atualizacao-firewall.sh     # apt update/upgrade + UFW (22, 80)
 │   ├── 02-apache.sh                   # instala e testa o Apache
 │   ├── 03-mariadb.sh                  # instala MariaDB, cria banco e usuário
@@ -55,6 +56,14 @@ atividade-lamp-wordpress/
 ---
 
 ## Como usar
+
+### Instalar só as dependências (apt)
+Prepara a VM do zero, instalando todas as libs/pacotes num comando:
+
+```bash
+sudo bash scripts/dependencias.sh              # instala tudo
+sudo bash scripts/dependencias.sh --so-baixar  # apenas baixa (não instala)
+```
 
 ### Opção rápida (tudo de uma vez)
 Copie a pasta `scripts/` para a VM e execute:
