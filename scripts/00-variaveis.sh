@@ -11,10 +11,21 @@
 
 # --- Dados do grupo -----------------------------------------------------------
 export GRUPO="grupo1"                                   # identificador do grupo
-export DOMINIO="www.${GRUPO}.redes2.internal"           # nome de domínio interno
+export DOMINIO="www.${GRUPO}.redes2.internal"           # nome de domínio interno (com www)
+export DOMINIO_CURTO="${GRUPO}.redes2.internal"         # variação sem o www (para o ServerAlias)
 
 # --- Dados de rede da VM ------------------------------------------------------
 export IP_SERVIDOR="192.168.56.10"                      # IP fixo da VM (rede host-only/bridge)
+export IP_MASCARA="24"                                  # máscara da rede host-only (CIDR)
+
+# Nomes que serão resolvidos para o IP_SERVIDOR no /etc/hosts.
+export HOSTS_DOMINIOS="${DOMINIO} ${DOMINIO_CURTO}"
+
+# URL "bonita" usada apenas em relatórios/mensagens. O site em si funciona
+# TANTO por IP QUANTO por domínio, graças à URL dinâmica (ver
+# scripts/ajustar-url-dinamica.sh): o WordPress assume o host que o navegador
+# usou. Assim nada quebra ao rodar a VM em outro PC.
+export URL_SITE="http://${DOMINIO}"
 
 # --- Dados do banco de dados (WordPress) --------------------------------------
 export DB_NAME="wordpress"                              # nome do banco
