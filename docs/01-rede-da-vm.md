@@ -67,6 +67,18 @@ Edite `C:\Windows\System32\drivers\etc\hosts` na hospedeira e adicione:
 ```
 Assim também funciona: `http://www.grupo1.redes2.internal/`.
 
+## Atalho: configurar automaticamente pela VM
+Em vez de editar arquivos na mão, rode na VM:
+
+```bash
+sudo bash scripts/configurar-rede.sh            # detecta Debian/Ubuntu e configura
+sudo bash scripts/configurar-rede.sh --dry-run  # só mostra o que faria
+```
+
+Ele define o IP fixo na interface host-only (sem mexer no NAT), garante o
+`Listen 80` do Apache, libera 22/80/443 no UFW e testa o acesso. Se a VM tiver
+**só NAT**, ele avisa para usar o redirecionamento de portas abaixo.
+
 ## Alternativa: NAT com redirecionamento de portas
 Se preferir o modo **NAT** (aceito pelo enunciado), configure em
 *Configurações → Rede → Avançado → Redirecionamento de Portas*:
@@ -76,3 +88,10 @@ Se preferir o modo **NAT** (aceito pelo enunciado), configure em
 | HTTPS | TCP | 127.0.0.1 | 8443 | 10.0.2.15 | 443 |
 
 Acesso na hospedeira: `http://localhost:8080/`.
+
+### Automatizando no Windows
+Rode no PowerShell da hospedeira (com a VM ligada):
+```powershell
+.\docs\host-nat-portforward.ps1 -VM "debian"
+```
+Isso cria as regras HTTP (8080→80) e HTTPS (8443→443) via `VBoxManage`.

@@ -34,6 +34,7 @@ atividade-lamp-wordpress/
 │   ├── chaves-seguranca.sh            # corrige as chaves SALT (funciona offline)
 │   ├── testar-conexao.sh              # valida conexão WordPress <-> MariaDB
 │   ├── diagnostico.sh                 # ajuda a achar o problema de "site travando"
+│   ├── configurar-rede.sh             # configura IP fixo (host-only) + Apache + UFW
 │   └── setup-completo.sh              # executa tudo (01 a 06 + 09) de uma vez
 ├── config/                            # cópias de referência dos .conf do Apache
 │   ├── wordpress.conf                 # VirtualHost HTTP
