@@ -23,6 +23,17 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
+# A URL dinâmica (ajustar-url-dinamica.sh) define WP_HOME/WP_SITEURL a partir do
+# host acessado e TEM PRECEDÊNCIA sobre os valores salvos no banco. Se ela estiver
+# ativa, este script (que grava nas opções) não terá efeito.
+if grep -q "LAMP_URL_DINAMICA" "${WP_DIR}/wp-config.php" 2>/dev/null; then
+  echo "AVISO: a URL dinâmica está ATIVA em ${WP_DIR}/wp-config.php."
+  echo "       Ela tem prioridade e ignora o que este script grava no banco."
+  echo "       Se você realmente quer um endereço fixo, remova o bloco"
+  echo "       'LAMP_URL_DINAMICA' do wp-config.php e rode de novo."
+  echo
+fi
+
 echo ">>> Definindo a URL do site para: ${URL}"
 
 sudo -u www-data env WP_DIR="${WP_DIR}" NOVA_URL="${URL}" php -r '
