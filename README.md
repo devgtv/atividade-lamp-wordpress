@@ -31,6 +31,9 @@ atividade-lamp-wordpress/
 │   ├── 07-https-opcional.sh           # desafio extra: HTTPS autoassinado
 │   ├── 08-testes-logs.sh              # testes com curl e leitura dos logs
 │   ├── 09-finalizar-wordpress.sh      # Parte 7 via WP-CLI (admin + página inicial)
+│   ├── chaves-seguranca.sh            # corrige as chaves SALT (funciona offline)
+│   ├── testar-conexao.sh              # valida conexão WordPress <-> MariaDB
+│   ├── diagnostico.sh                 # ajuda a achar o problema de "site travando"
 │   └── setup-completo.sh              # executa tudo (01 a 06 + 09) de uma vez
 ├── config/                            # cópias de referência dos .conf do Apache
 │   ├── wordpress.conf                 # VirtualHost HTTP

@@ -68,10 +68,11 @@ fi
 # --- 6) WordPress consegue consultar o banco (wp db check) --------------------
 echo "6) Verificação pelo WP-CLI (wp db check)"
 if command -v wp >/dev/null 2>&1 && [ -f "${WP_DIR}/wp-config.php" ]; then
-  if sudo -u www-data env HOME=/var/www wp --path="${WP_DIR}" db check >/dev/null 2>&1; then
+  if SAIDA_WP="$(sudo -u www-data env HOME=/var/www wp --path="${WP_DIR}" db check 2>&1)"; then
     ok "wp db check: banco OK pela visão do WordPress"
   else
-    falha "wp db check falhou (rode: sudo -u www-data wp --path=${WP_DIR} db check)"
+    falha "wp db check falhou. Erro:"
+    echo "${SAIDA_WP}" | sed 's/^/          /'
   fi
 else
   echo "  [--]    WP-CLI/wp-config indisponível; pulando"

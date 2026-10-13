@@ -59,30 +59,54 @@ sudo -u www-data sed -i "s/password_here/${DB_PASS}/"     wp-config.php
 # -----------------------------------------------------------------------------
 # Chaves de segurança (AUTH_KEY, SECURE_AUTH_KEY, LOGGED_IN_KEY, NONCE_KEY...)
 # São strings aleatórias que melhoram a segurança das sessões/cookies.
-# Buscamos as chaves oficiais em api.wordpress.org e substituímos o bloco padrão.
+# Tentamos baixar as oficiais de api.wordpress.org; se não houver internet
+# (ex.: VM só em host-only), GERAMOS chaves aleatórias localmente. Assim as
+# chaves NUNCA ficam com o valor de exemplo.
 # -----------------------------------------------------------------------------
-echo ">>> Baixando e aplicando as chaves de segurança (SALT)..."
-SALTS="$(curl -s https://api.wordpress.org/secret-key/1.1/salt/)"
+echo ">>> Aplicando as chaves de segurança (SALT)..."
+SALTS="$(curl -fsS --max-time 15 https://api.wordpress.org/secret-key/1.1/salt/ 2>/dev/null || true)"
+# Só aceitamos a resposta se ela realmente contiver definições "define(".
+case "$SALTS" in
+  *"define("*) : ;;
+  *) SALTS="" ;;
+esac
+[ -z "$SALTS" ] && echo "    (sem internet ou resposta inválida: gerando chaves localmente)"
 
-# Remove as 8 linhas de exemplo ("put your unique phrase here") e insere as reais.
-# Usamos um arquivo temporário e reconstruímos o wp-config.php.
-if [ -n "$SALTS" ]; then
-  sudo -u www-data python3 - "$WP_DIR/wp-config.php" "$SALTS" <<'PY'
-import re, sys
-path, salts = sys.argv[1], sys.argv[2]
+sudo -u www-data python3 - "$WP_DIR/wp-config.php" "$SALTS" <<'PY'
+import re, sys, secrets, string
+
+path = sys.argv[1]
+salts = sys.argv[2].strip()
+
+# Fallback offline: gera 8 chaves aleatórias no formato do WordPress.
+if not salts or "define(" not in salts:
+    chars = string.ascii_letters + string.digits + "!@#$%^&*()-_[]{}<>~+=,.;:/?|"
+    names = ["AUTH_KEY", "SECURE_AUTH_KEY", "LOGGED_IN_KEY", "NONCE_KEY",
+             "AUTH_SALT", "SECURE_AUTH_SALT", "LOGGED_IN_SALT", "NONCE_SALT"]
+    salts = "\n".join(
+        "define( '%s', '%s' );" % (n, "".join(secrets.choice(chars) for _ in range(64)))
+        for n in names
+    )
+    origem = "geradas localmente"
+else:
+    origem = "api.wordpress.org"
+
 with open(path) as f:
     content = f.read()
-# Substitui todo o bloco entre os marcadores padrão do WordPress
-pattern = (r"define\( 'AUTH_KEY'.*?define\( 'NONCE_SALT',[^\n]*\n")
-new = salts.strip() + "\n"
-content = re.sub(pattern, new, content, flags=re.S)
+
+# Substitui todo o bloco entre o AUTH_KEY e o NONCE_SALT (formato do WordPress).
+pattern = r"define\( 'AUTH_KEY'.*?define\( 'NONCE_SALT',[^\n]*\n"
+content2, n = re.subn(pattern, lambda m: salts.strip() + "\n", content, flags=re.S)
+
+# Sanidade: se o bloco não foi encontrado, grava as chaves após o <?php.
+if n == 0:
+    content2 = re.sub(r"<\?php\n", "<?php\n" + salts.strip() + "\n", content, count=1)
+
 with open(path, "w") as f:
-    f.write(content)
+    f.write(content2)
+
+print("    chaves de segurança aplicadas (%s)" % origem)
 PY
-  echo "    chaves de segurança aplicadas."
-else
-  echo "    AVISO: não foi possível baixar as chaves (sem internet?). WordPress funciona, mas troque-as manualmente."
-fi
 
 # -----------------------------------------------------------------------------
 # Dica de segurança: desabilitar edição de arquivos pelo painel (opcional).
