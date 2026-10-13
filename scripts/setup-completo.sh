@@ -10,6 +10,7 @@
 #
 # Opções (flags):
 #   --com-dependencias  Instala TODAS as dependências via apt antes (script dependencias).
+#   --com-rede          Ao final, configura a rede (IP fixo host-only + /etc/hosts + URL).
 #   --https             Ao final, também habilita HTTPS autoassinado (script 07).
 #   --sem-finalizar     NÃO conclui a instalação via PHP (script 09),
 #                       deixando a Parte 7 para ser feita pelo navegador.
@@ -20,6 +21,7 @@
 #   - instala a pilha LAMP (01 a 06);
 #   - conclui o WordPress automaticamente (09): cria admin, a página dos
 #     integrantes e a define como página inicial;
+#   - aplica a URL dinâmica (o site passa a funcionar por IP OU domínio);
 #   - verifica a conexão WordPress <-> MariaDB (testar-conexao.sh).
 #
 # Observação: para concluir pelo navegador em vez do PHP, use --sem-finalizar
@@ -30,18 +32,20 @@ set -e
 
 # --------------------------- Ajuda / flags -----------------------------------
 FAZ_DEPENDENCIAS=0
+FAZ_REDE=0
 FAZ_HTTPS=0
 FAZ_FINALIZAR=1
 FAZ_VERIFICAR=1
 
 uso() {
-  sed -n '2,27p' "$0"
+  sed -n '2,29p' "$0"
   exit 0
 }
 
 for arg in "$@"; do
   case "$arg" in
     --com-dependencias) FAZ_DEPENDENCIAS=1 ;;
+    --com-rede)         FAZ_REDE=1 ;;
     --https)            FAZ_HTTPS=1 ;;
     --sem-finalizar)    FAZ_FINALIZAR=0 ;;
     --sem-verificar)    FAZ_VERIFICAR=0 ;;
@@ -71,6 +75,7 @@ echo "  Domínio    : ${DOMINIO}"
 echo "  IP         : ${IP_SERVIDOR}"
 echo "  Banco      : ${DB_NAME} / usuário ${DB_USER}"
 echo "  Dependências: $([ "$FAZ_DEPENDENCIAS" -eq 1 ] && echo sim || echo nao)"
+echo "  Rede       : $([ "$FAZ_REDE" -eq 1 ] && echo 'sim (IP fixo + hosts)' || echo nao)"
 echo "  HTTPS      : $([ "$FAZ_HTTPS" -eq 1 ] && echo sim || echo nao)"
 echo "  Finalizar  : $([ "$FAZ_FINALIZAR" -eq 1 ] && echo 'sim (PHP)' || echo 'nao (navegador)')"
 echo "  Verificar  : $([ "$FAZ_VERIFICAR" -eq 1 ] && echo sim || echo nao)"
@@ -109,6 +114,13 @@ echo "# Garantindo as chaves de segurança (chaves-seguranca.sh)"
 echo "###################################################################"
 bash "${BASE_DIR}/chaves-seguranca.sh" || echo "AVISO: revise as chaves de segurança."
 
+# --------- URL dinâmica (o site funciona por IP OU domínio) ------------------
+echo
+echo "###################################################################"
+echo "# Aplicando a URL dinâmica do WordPress (ajustar-url-dinamica.sh)"
+echo "###################################################################"
+bash "${BASE_DIR}/ajustar-url-dinamica.sh" || echo "AVISO: revise a URL dinâmica no wp-config.php."
+
 # --------------------------- Parte 7 (09) ------------------------------------
 if [ "$FAZ_FINALIZAR" -eq 1 ]; then
   echo
@@ -116,6 +128,15 @@ if [ "$FAZ_FINALIZAR" -eq 1 ]; then
   echo "# Executando 09-finalizar-wordpress.sh (Parte 7 via PHP)"
   echo "###################################################################"
   bash "${BASE_DIR}/09-finalizar-wordpress.sh"
+fi
+
+# --------------------------- Rede (opcional) ---------------------------------
+if [ "$FAZ_REDE" -eq 1 ]; then
+  echo
+  echo "###################################################################"
+  echo "# Configurando a rede (configurar-rede.sh): IP fixo + /etc/hosts"
+  echo "###################################################################"
+  bash "${BASE_DIR}/configurar-rede.sh" || echo "AVISO: revise a configuração de rede (talvez falte o adaptador host-only)."
 fi
 
 # --------------------------- Desafio extra (07) ------------------------------
@@ -142,6 +163,7 @@ echo "# FINALIZADO!"
 echo "###################################################################"
 echo "Acesse no navegador da hospedeira:"
 echo "  http://${IP_SERVIDOR}/"
+echo "  http://${DOMINIO}/   (precisa do domínio no hosts do PC)"
 [ "$FAZ_HTTPS" -eq 1 ] && echo "  https://${IP_SERVIDOR}/   (certificado autoassinado)"
 if [ "$FAZ_FINALIZAR" -eq 0 ]; then
   echo "Conclua a instalação pelo navegador (Parte 7): http://${IP_SERVIDOR}/wp-admin/install.php"
@@ -149,4 +171,8 @@ else
   echo "Login do painel: ${ADMIN_USER} / ${ADMIN_PASS}"
 fi
 echo
+if [ "$FAZ_REDE" -eq 0 ]; then
+  echo "Dica: para fixar o IP e liberar o domínio, rode: sudo bash ${BASE_DIR}/configurar-rede.sh"
+  echo "      (ou use --com-rede no setup; no PC use host/configurar-virtualbox.ps1)"
+fi
 echo "Se o site não abrir/travar, rode: bash ${BASE_DIR}/diagnostico.sh"
