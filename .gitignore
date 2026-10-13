@@ -1,0 +1,23 @@
+# WordPress (nunca versionar credenciais nem arquivos gerados)
+wp-config.php
+*.tar.gz
+latest.tar.gz
+
+# Certificados e chaves
+*.key
+*.crt
+*.pem
+
+# Logs
+*.log
+
+# Sistema operacional / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Backups / temporários
+*.bak
+*.tmp
+*~
