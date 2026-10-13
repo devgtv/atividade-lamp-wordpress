@@ -36,6 +36,7 @@ atividade-lamp-wordpress/
 │   ├── diagnostico.sh                 # ajuda a achar o problema de "site travando"
 │   ├── coletar-diagnostico.sh         # gera um relatório completo p/ depuração
 │   ├── configurar-rede.sh             # configura IP fixo (host-only) + Apache + UFW
+│   ├── definir-url-site.sh            # ajusta home/siteurl do WordPress (corrige redirect)
 │   └── setup-completo.sh              # executa tudo (01 a 06 + 09) de uma vez
 ├── config/                            # cópias de referência dos .conf do Apache
 │   ├── wordpress.conf                 # VirtualHost HTTP

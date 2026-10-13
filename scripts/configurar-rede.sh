@@ -79,7 +79,9 @@ fi
 echo ">>> Interface escolhida: ${IFACE}  =>  ${CIDR}"
 
 # ----------------------------- Modo de configuração --------------------------
-if compgen -G "/etc/netplan/*.yaml" >/dev/null 2>&1; then
+if command -v nmcli >/dev/null 2>&1 && systemctl is-active --quiet NetworkManager 2>/dev/null; then
+  MODO="networkmanager"
+elif compgen -G "/etc/netplan/*.yaml" >/dev/null 2>&1; then
   MODO="netplan"
 elif [ -f /etc/network/interfaces ]; then
   MODO="debian"
@@ -93,6 +95,25 @@ if [ "$DRY_RUN" -eq 1 ]; then
 fi
 
 case "$MODO" in
+  networkmanager)
+    if [ "$DRY_RUN" -eq 0 ]; then
+      # Procura a conexão já ligada a esta interface (senão cria uma nova).
+      CON="$(nmcli -t -f NAME,DEVICE connection show 2>/dev/null | awk -F: -v d="${IFACE}" '$2==d{print $1; exit}')"
+      if [ -z "${CON}" ]; then
+        CON="lamp-hostonly"
+        nmcli connection add type ethernet ifname "${IFACE}" con-name "${CON}" >/dev/null
+      fi
+      echo ">>> Configurando conexão NetworkManager '${CON}' (${IFACE}) => ${CIDR}..."
+      # ipv4.never-default + gateway vazio: NÃO vira rota default (mantém o NAT/internet)
+      nmcli connection modify "${CON}" \
+        ipv4.method manual \
+        ipv4.addresses "${CIDR}" \
+        ipv4.gateway "" \
+        ipv4.never-default yes \
+        ipv6.method ignore
+      nmcli connection up "${CON}" >/dev/null 2>&1 || true
+    fi
+    ;;
   netplan)
     ARQ="/etc/netplan/99-lamp-hostonly.yaml"
     if [ "$DRY_RUN" -eq 0 ]; then
