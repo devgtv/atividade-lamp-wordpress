@@ -65,17 +65,32 @@ else
   falha "wp-config.php NÃO encontrado em ${WP_DIR}"
 fi
 
-# --- 6) WordPress consegue consultar o banco (wp db check) --------------------
-echo "6) Verificação pelo WP-CLI (wp db check)"
-if command -v wp >/dev/null 2>&1 && [ -f "${WP_DIR}/wp-config.php" ]; then
-  if SAIDA_WP="$(sudo -u www-data env HOME=/var/www wp --path="${WP_DIR}" db check 2>&1)"; then
-    ok "wp db check: banco OK pela visão do WordPress"
+# --- 6) O PHP (como o WordPress) conecta no banco -----------------------------
+echo "6) Conexão pelo PHP (mysqli) - é assim que o WordPress conecta"
+if command -v php >/dev/null 2>&1; then
+  if SAIDA_PHP="$(DB_USER="${DB_USER}" DB_PASS="${DB_PASS}" DB_NAME="${DB_NAME}" php -r \
+      '$m=@new mysqli("localhost",getenv("DB_USER"),getenv("DB_PASS"),getenv("DB_NAME"));
+       if($m->connect_error){fwrite(STDERR,$m->connect_error);exit(1);} echo "ok";' 2>&1)"; then
+    ok "PHP conectou no banco (mysqli): ${SAIDA_PHP}"
   else
-    falha "wp db check falhou. Erro:"
-    echo "${SAIDA_WP}" | sed 's/^/          /'
+    falha "PHP NÃO conectou. Erro: ${SAIDA_PHP}"
   fi
 else
-  echo "  [--]    WP-CLI/wp-config indisponível; pulando"
+  echo "  [--]    PHP indisponível; pulando"
+fi
+
+# --- 7) O WordPress carrega (bootstrap wp-load.php) ---------------------------
+echo "7) O WordPress inicializa (carrega o núcleo)"
+if command -v php >/dev/null 2>&1 && [ -f "${WP_DIR}/wp-config.php" ]; then
+  if SAIDA_LOAD="$(sudo -u www-data php -r \
+      "require '${WP_DIR}/wp-load.php'; echo is_blog_installed()?'instalado':'nao-instalado';" 2>&1)"; then
+    ok "wp-load.php carregou: ${SAIDA_LOAD}"
+  else
+    falha "wp-load.php falhou. Erro:"
+    echo "${SAIDA_LOAD}" | sed 's/^/          /'
+  fi
+else
+  echo "  [--]    PHP/wp-config indisponível; pulando"
 fi
 
 echo "==================================================================="

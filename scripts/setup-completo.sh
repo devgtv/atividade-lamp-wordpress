@@ -11,7 +11,7 @@
 # Opções (flags):
 #   --com-dependencias  Instala TODAS as dependências via apt antes (script dependencias).
 #   --https             Ao final, também habilita HTTPS autoassinado (script 07).
-#   --sem-finalizar     NÃO conclui a instalação pelo WP-CLI (script 09),
+#   --sem-finalizar     NÃO conclui a instalação via PHP (script 09),
 #                       deixando a Parte 7 para ser feita pelo navegador.
 #   --sem-verificar     Não roda a verificação final (testar-conexao.sh).
 #   -h, --help          Mostra esta ajuda.
@@ -22,7 +22,7 @@
 #     integrantes e a define como página inicial;
 #   - verifica a conexão WordPress <-> MariaDB (testar-conexao.sh).
 #
-# Observação: para concluir pelo navegador em vez do WP-CLI, use --sem-finalizar
+# Observação: para concluir pelo navegador em vez do PHP, use --sem-finalizar
 # e acesse http://<IP>/wp-admin/install.php.
 # =============================================================================
 
@@ -72,7 +72,7 @@ echo "  IP         : ${IP_SERVIDOR}"
 echo "  Banco      : ${DB_NAME} / usuário ${DB_USER}"
 echo "  Dependências: $([ "$FAZ_DEPENDENCIAS" -eq 1 ] && echo sim || echo nao)"
 echo "  HTTPS      : $([ "$FAZ_HTTPS" -eq 1 ] && echo sim || echo nao)"
-echo "  Finalizar  : $([ "$FAZ_FINALIZAR" -eq 1 ] && echo 'sim (WP-CLI)' || echo 'nao (navegador)')"
+echo "  Finalizar  : $([ "$FAZ_FINALIZAR" -eq 1 ] && echo 'sim (PHP)' || echo 'nao (navegador)')"
 echo "  Verificar  : $([ "$FAZ_VERIFICAR" -eq 1 ] && echo sim || echo nao)"
 
 # --------------------- 0.5) Dependências (opcional) --------------------------
@@ -113,7 +113,7 @@ bash "${BASE_DIR}/chaves-seguranca.sh" || echo "AVISO: revise as chaves de segur
 if [ "$FAZ_FINALIZAR" -eq 1 ]; then
   echo
   echo "###################################################################"
-  echo "# Executando 09-finalizar-wordpress.sh (Parte 7 via WP-CLI)"
+  echo "# Executando 09-finalizar-wordpress.sh (Parte 7 via PHP)"
   echo "###################################################################"
   bash "${BASE_DIR}/09-finalizar-wordpress.sh"
 fi
