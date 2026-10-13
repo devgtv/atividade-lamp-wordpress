@@ -55,7 +55,12 @@ EOF
 
 echo ">>> Habilitando o site SSL, liberando a porta no firewall e recarregando..."
 a2ensite wordpress-ssl
-ufw allow 443/tcp
+# Libera a 443/tcp por porta e tolera ambientes sem UFW/suporte a iptables.
+if command -v ufw >/dev/null 2>&1; then
+  ufw allow 443/tcp || echo "AVISO: não foi possível liberar a porta 443."
+else
+  echo "AVISO: UFW não instalado; pulando liberação da porta 443."
+fi
 apache2ctl configtest
 systemctl reload apache2
 

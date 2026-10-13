@@ -24,11 +24,22 @@ apt update          # baixa a lista atualizada de pacotes dos repositórios
 apt upgrade -y      # instala as atualizações de segurança/pacotes
 
 echo ">>> Configurando o firewall (UFW)..."
-ufw allow OpenSSH  # libera a porta 22 (para não perder acesso via SSH)
-ufw allow 80/tcp   # libera a porta 80 (HTTP -> site WordPress)
-ufw --force enable # habilita o firewall sem pedir confirmação interativa
+# Liberamos por PORTA (22/tcp) e não pelo perfil "OpenSSH", pois o perfil só
+# existe quando o pacote openssh-server está instalado. Sem ele, o UFW retorna
+# "Could not find a profile matching 'OpenSSH'". A liberação por porta funciona
+# sempre e é equivalente para o SSH.
+#
+# As falhas do UFW não interrompem o script (importante em WSL/containers, onde
+# o firewall pode não ter suporte a iptables). Só emitimos um aviso.
+if command -v ufw >/dev/null 2>&1; then
+  ufw allow 22/tcp          || echo "AVISO: não foi possível liberar a porta 22."
+  ufw allow 80/tcp          || echo "AVISO: não foi possível liberar a porta 80."
+  ufw --force enable        || echo "AVISO: não foi possível habilitar o UFW (ambiente sem suporte a iptables?)."
 
-echo ">>> Situação do firewall:"
-ufw status verbose # mostra as regras ativas
+  echo ">>> Situação do firewall:"
+  ufw status verbose        || echo "AVISO: não foi possível consultar o status do UFW."
+else
+  echo "AVISO: UFW não está instalado; pulando a configuração do firewall."
+fi
 
 echo ">>> Concluído: sistema atualizado e firewall ativo."
