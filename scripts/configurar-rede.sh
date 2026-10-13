@@ -4,8 +4,9 @@
 # -----------------------------------------------------------------------------
 # Configura o IP FIXO na interface de rede da VM (host-only) para o servidor
 # ficar acessível pela máquina hospedeira, e garante que o Apache/UFW permitam
-# o acesso. Detecta automaticamente Debian (/etc/network/interfaces) e
-# Ubuntu (netplan).
+# o acesso. Detecta automaticamente o gerenciador de rede em uso:
+# NetworkManager (nmcli), Ubuntu (netplan) ou Debian clássico
+# (/etc/network/interfaces).
 #
 # Uso:
 #   sudo bash scripts/configurar-rede.sh
