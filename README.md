@@ -75,16 +75,19 @@ Copie a pasta `scripts/` para a VM e execute:
 sudo bash scripts/setup-completo.sh
 ```
 
-Sem flags, ele instala a pilha LAMP (01 a 06) **e** conclui o WordPress
-automaticamente via WP-CLI (09): cria o usuário `admin`, a página dos integrantes
-e a define como página inicial. Depois é só abrir `http://192.168.56.10/`.
+Sem flags, ele instala a pilha LAMP (01 a 06), conclui o WordPress via WP-CLI
+(09: cria `admin`, a página dos integrantes e a define como inicial), garante as
+chaves de segurança e roda a verificação final de conexão. Depois é só abrir
+`http://192.168.56.10/`.
 
 Flags disponíveis:
 
 ```bash
-sudo bash scripts/setup-completo.sh --https           # + HTTPS autoassinado (07)
-sudo bash scripts/setup-completo.sh --sem-finalizar   # Parte 7 feita no navegador
-sudo bash scripts/setup-completo.sh --help            # ajuda
+sudo bash scripts/setup-completo.sh --com-dependencias  # instala todas as deps via apt antes
+sudo bash scripts/setup-completo.sh --https             # + HTTPS autoassinado (07)
+sudo bash scripts/setup-completo.sh --sem-finalizar     # Parte 7 feita no navegador
+sudo bash scripts/setup-completo.sh --sem-verificar     # pula a verificação final
+sudo bash scripts/setup-completo.sh --help              # ajuda
 ```
 
 ### Opção passo a passo (recomendada para a apresentação)
