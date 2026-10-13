@@ -18,6 +18,7 @@
 # =============================================================================
 
 source "$(dirname "$0")/00-variaveis.sh"
+BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # ----------------------------- Argumentos ------------------------------------
 IFACE=""
@@ -186,6 +187,33 @@ if command -v ufw >/dev/null 2>&1 && [ "$DRY_RUN" -eq 0 ]; then
   ufw reload        >/dev/null 2>&1 || true
 fi
 
+# ----------------------------- /etc/hosts -------------------------------------
+# Mapeia o domínio para o IP fixo DENTRO da VM (assim o próprio servidor e o
+# WordPress resolvem http://www.grupo1.redes2.internal sem DNS externo).
+if [ "$DRY_RUN" -eq 0 ]; then
+  if grep -qE "^[^#]*[[:space:]]${IP_SERVIDOR}([[:space:]]|$)" /etc/hosts 2>/dev/null; then
+    echo ">>> /etc/hosts já contém ${IP_SERVIDOR} (ok)."
+  else
+    echo ">>> Adicionando ${DOMINIO} e ${DOMINIO_CURTO} ao /etc/hosts..."
+    printf '%s\t%s\t%s\n' "${IP_SERVIDOR}" "${DOMINIO}" "${DOMINIO_CURTO}" >> /etc/hosts
+  fi
+fi
+
+# ------------------------- VirtualHost (aliases/IP) ---------------------------
+# Regenera o VirtualHost para garantir ServerName/ServerAlias atuais
+# (domínio, domínio sem www e o IP), sem intervenção manual.
+if [ -f "${APACHE_SITE}" ] && command -v apache2ctl >/dev/null 2>&1 && [ "$DRY_RUN" -eq 0 ]; then
+  echo ">>> Sincronizando o VirtualHost (06-virtualhost.sh)..."
+  bash "${BASE_DIR}/06-virtualhost.sh" >/dev/null 2>&1 || echo "AVISO: não consegui atualizar o VirtualHost."
+fi
+
+# --------------------- URL dinâmica do WordPress ------------------------------
+# Faz o WordPress aceitar IP, domínio e localhost:porta sem trocar endereço.
+if [ -f "${WP_DIR}/wp-config.php" ] && [ "$DRY_RUN" -eq 0 ]; then
+  echo ">>> Configurando a URL dinâmica do WordPress (ajustar-url-dinamica.sh)..."
+  bash "${BASE_DIR}/ajustar-url-dinamica.sh" >/dev/null 2>&1 || echo "AVISO: não consegui aplicar a URL dinâmica."
+fi
+
 # ----------------------------- Verificação ------------------------------------
 echo
 echo "==================================================================="
@@ -196,10 +224,14 @@ echo "--- ip a ---";          ip -brief addr
 echo "--- rota default ---"; ip route show default
 echo "--- porta 80 ---";     ss -tlnp 2>/dev/null | grep -E ':80\b' || echo "  (nada escutando na 80)"
 echo "--- HTTP ---"
-curl -s -o /dev/null -m 8 -w "  http://localhost/     -> HTTP %{http_code}\n" http://localhost/ || echo "  localhost: falhou"
-curl -s -o /dev/null -m 8 -w "  http://${IP_SERVIDOR}/ -> HTTP %{http_code}\n" "http://${IP_SERVIDOR}/" || echo "  ${IP_SERVIDOR}: falhou"
+curl -s -o /dev/null -m 8 -w "  http://localhost/           -> HTTP %{http_code}\n" http://localhost/ || echo "  localhost: falhou"
+curl -s -o /dev/null -m 8 -w "  http://${IP_SERVIDOR}/        -> HTTP %{http_code}\n" "http://${IP_SERVIDOR}/" || echo "  ${IP_SERVIDOR}: falhou"
+curl -s -o /dev/null -m 8 -w "  http://${DOMINIO}/ -> HTTP %{http_code}\n" "http://${DOMINIO}/" || echo "  ${DOMINIO}: falhou"
 
 echo
-echo "Se o IP acima respondeu, abra na hospedeira: http://${IP_SERVIDOR}/"
+echo "Se os IPs/domínio acima responderam, abra na hospedeira: http://${IP_SERVIDOR}/"
+echo "Para o DOMÍNIO funcionar na hospedeira, adicione no hosts do PC (uma vez):"
+echo "  ${IP_SERVIDOR}  ${DOMINIO} ${DOMINIO_CURTO}"
+echo "  (no Windows, use: host/configurar-virtualbox.ps1  -- adiciona sozinho)"
 echo "Se a VM tiver só NAT, use: docs/host-nat-portforward.ps1 (http://localhost:8080/)"
 echo "Ainda com problema? rode: bash scripts/diagnostico.sh"
