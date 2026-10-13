@@ -23,8 +23,8 @@ cat > "${APACHE_SITE}" <<EOF
 <VirtualHost *:80>
     # ServerName: nome com que este site "se identifica"
     ServerName ${DOMINIO}
-    # ServerAlias: nomes alternativos (aceita também acesso pelo IP)
-    ServerAlias ${IP_SERVIDOR}
+    # ServerAlias: nomes alternativos (aceita acesso pelo IP e pelo domínio sem www)
+    ServerAlias ${IP_SERVIDOR} ${DOMINIO_CURTO}
 
     # Pasta pública do site (onde está o WordPress)
     DocumentRoot ${WP_DIR}
@@ -57,6 +57,6 @@ systemctl reload apache2
 
 echo
 echo ">>> Concluído: VirtualHost ativo."
-echo "    (Opcional) Adicione no /etc/hosts da hospedeira:"
-echo "      ${IP_SERVIDOR}  ${DOMINIO}"
-echo "    Assim você acessa por http://${DOMINIO} além do IP."
+echo "    O site responde por http://${IP_SERVIDOR}/ e http://${DOMINIO}/."
+echo "    Para o domínio resolver na hospedeira, use host/configurar-virtualbox.ps1"
+echo "    (adiciona o hosts sozinho) ou adicione: ${IP_SERVIDOR}  ${HOSTS_DOMINIOS}"
