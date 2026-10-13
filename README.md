@@ -19,8 +19,11 @@ máquina hospedeira.
 ```
 atividade-lamp-wordpress/
 ├── README.md                          # este arquivo
+├── host/                              # scripts para rodar na HOSPEDEIRA (PC físico)
+│   ├── configurar-virtualbox.ps1      # Windows: cria host-only, adaptador, hosts, port-forward
+│   └── configurar-virtualbox.sh       # Linux/WSL: mesma automação
 ├── scripts/                           # scripts comentados, na ordem de execução
-│   ├── 00-variaveis.sh                # variáveis comuns (dados do grupo/banco)
+│   ├── 00-variaveis.sh                # variáveis comuns (dados do grupo/banco/rede)
 │   ├── dependencias.sh                # instala TODAS as dependências via apt
 │   ├── 01-atualizacao-firewall.sh     # apt update/upgrade + UFW (22, 80)
 │   ├── 02-apache.sh                   # instala e testa o Apache
@@ -32,18 +35,19 @@ atividade-lamp-wordpress/
 │   ├── 08-testes-logs.sh              # testes com curl e leitura dos logs
 │   ├── 09-finalizar-wordpress.sh      # Parte 7 via PHP (admin + página inicial)
 │   ├── chaves-seguranca.sh            # corrige as chaves SALT (funciona offline)
+│   ├── ajustar-url-dinamica.sh        # WordPress aceita IP OU domínio (portátil)
 │   ├── testar-conexao.sh              # valida conexão WordPress <-> MariaDB
 │   ├── diagnostico.sh                 # ajuda a achar o problema de "site travando"
 │   ├── coletar-diagnostico.sh         # gera um relatório completo p/ depuração
-│   ├── configurar-rede.sh             # configura IP fixo (host-only) + Apache + UFW
-│   ├── definir-url-site.sh            # ajusta home/siteurl do WordPress (corrige redirect)
-│   └── setup-completo.sh              # executa tudo (01 a 06 + 09) de uma vez
+│   ├── configurar-rede.sh             # IP fixo + /etc/hosts + VirtualHost + URL (auto)
+│   ├── definir-url-site.sh            # força um endereço fixo (opcional)
+│   └── setup-completo.sh              # executa tudo (01 a 06 + 09 + URL) de uma vez
 ├── config/                            # cópias de referência dos .conf do Apache
 │   ├── wordpress.conf                 # VirtualHost HTTP
 │   ├── wordpress-ssl.conf             # VirtualHost HTTPS
 │   └── README-config.md
 └── docs/                              # documentação da apresentação
-    ├── 01-rede-da-vm.md               # como foi configurada a rede da VM
+    ├── 01-rede-da-vm.md               # rede automática (host-only/NAT, domínio)
     ├── 02-wireshark.md                # roteiro da captura HTTP
     ├── 03-questoes-apresentacao.md    # respostas das 5 questões
     ├── 04-roteiro-apresentacao.md     # checklist da apresentação
@@ -55,9 +59,37 @@ atividade-lamp-wordpress/
 ## Pré-requisitos
 
 - Máquina virtual (VirtualBox, VMware, Hyper-V...) com **Ubuntu Server** ou **Debian**.
-- Rede da VM configurada (host-only/bridge) com IP fixo — ver `docs/01-rede-da-vm.md`.
 - Máquina hospedeira com **navegador** e **Wireshark**.
 - Acesso à internet na VM (para `apt`/`wget`) durante a instalação.
+- A rede da VM é configurada **automaticamente** pelos scripts (não precisa editar
+  arquivos na mão) — ver `docs/01-rede-da-vm.md`.
+
+---
+
+## Começando do zero (funciona em qualquer PC)
+
+**1) Na hospedeira** — prepara o VirtualBox (rede host-only + adaptador + hosts):
+```powershell
+.\host\configurar-virtualbox.ps1 -VM "lampredes"     # Windows
+# ou
+bash host/configurar-virtualbox.sh --vm lampredes     # Linux/WSL
+```
+
+**2) Na VM** — instala tudo e configura a rede/URL de uma vez:
+```bash
+git clone <URL-do-repo> atividade-lamp-wordpress
+cd atividade-lamp-wordpress
+sudo bash scripts/setup-completo.sh --com-dependencias --com-rede
+```
+
+**3) Acesse na hospedeira:**
+- IP: `http://192.168.56.10/`
+- Domínio: `http://www.grupo1.redes2.internal/`
+- Painel: `/wp-login.php` — `admin` / `AdminWordPress123!`
+
+> O site é **portátil**: graças à URL dinâmica (`scripts/ajustar-url-dinamica.sh`)
+> ele responde por IP, por domínio ou por `localhost:8080`, sem trocar endereço ao
+> mudar de PC.
 
 ---
 
@@ -79,14 +111,15 @@ sudo bash scripts/setup-completo.sh
 ```
 
 Sem flags, ele instala a pilha LAMP (01 a 06), conclui o WordPress via PHP
-(09: cria `admin`, a página dos integrantes e a define como inicial), garante as
-chaves de segurança e roda a verificação final de conexão. Depois é só abrir
-`http://192.168.56.10/`.
+(09: cria `admin`, a página dos integrantes e a define como inicial), aplica a
+URL dinâmica, garante as chaves de segurança e roda a verificação final de
+conexão. Depois é só abrir `http://192.168.56.10/` (ou o domínio, com `--com-rede`).
 
 Flags disponíveis:
 
 ```bash
 sudo bash scripts/setup-completo.sh --com-dependencias  # instala todas as deps via apt antes
+sudo bash scripts/setup-completo.sh --com-rede          # + IP fixo, /etc/hosts e domínio
 sudo bash scripts/setup-completo.sh --https             # + HTTPS autoassinado (07)
 sudo bash scripts/setup-completo.sh --sem-finalizar     # Parte 7 feita no navegador
 sudo bash scripts/setup-completo.sh --sem-verificar     # pula a verificação final
@@ -103,6 +136,8 @@ sudo bash scripts/03-mariadb.sh
 sudo bash scripts/04-php.sh
 sudo bash scripts/05-wordpress.sh
 sudo bash scripts/06-virtualhost.sh
+sudo bash scripts/ajustar-url-dinamica.sh    # site funciona por IP ou domínio
+sudo bash scripts/configurar-rede.sh         # IP fixo + /etc/hosts + VirtualHost
 sudo bash scripts/09-finalizar-wordpress.sh  # Parte 7 (PHP) - OU pelo navegador
 bash      scripts/08-testes-logs.sh          # testes (não precisa de root)
 sudo bash scripts/07-https-opcional.sh       # opcional: HTTPS
