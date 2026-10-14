@@ -3,7 +3,7 @@
 **Disciplina:** CIC1001 – Redes de Computadores II
 **Grupo:** 1
 **Domínio interno:** `www.grupo1.redes2.internal`
-**IP do servidor:** `192.168.56.10`
+**IP do servidor:** `192.168.56.10` (padrão — os scripts detectam automaticamente o IP real da VM e mostram o endereço correto no final de cada execução)
 **Banco de dados:** `wordpress` / usuário `wpuser`
 **Entrega/apresentação:** até 16/10/2026
 

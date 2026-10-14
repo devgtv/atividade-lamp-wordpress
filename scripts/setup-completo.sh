@@ -157,20 +157,34 @@ if [ "$FAZ_VERIFICAR" -eq 1 ]; then
   bash "${BASE_DIR}/testar-conexao.sh" || echo "AVISO: a verificação encontrou falhas (veja acima)."
 fi
 
+# Reavalia o IP AGORA, depois de todas as etapas (inclusive --com-rede): em VM
+# nova o IP real costuma ser diferente do IP fixo antigo que aparecia no print.
+IP_ACESSO="$(detectar_ip_servidor)"
+if [ -z "${IP_ACESSO}" ]; then IP_ACESSO="${IP_SERVIDOR}"; fi
+
 echo
 echo "###################################################################"
 echo "# FINALIZADO!"
 echo "###################################################################"
+echo "IP desta máquina: ${IP_ACESSO}"
 echo "Acesse no navegador da hospedeira:"
-echo "  http://${IP_SERVIDOR}/"
+echo "  http://${IP_ACESSO}/"
 echo "  http://${DOMINIO}/   (precisa do domínio no hosts do PC)"
-[ "$FAZ_HTTPS" -eq 1 ] && echo "  https://${IP_SERVIDOR}/   (certificado autoassinado)"
+[ "$FAZ_HTTPS" -eq 1 ] && echo "  https://${IP_ACESSO}/   (certificado autoassinado)"
 if [ "$FAZ_FINALIZAR" -eq 0 ]; then
-  echo "Conclua a instalação pelo navegador (Parte 7): http://${IP_SERVIDOR}/wp-admin/install.php"
+  echo "Conclua a instalação pelo navegador (Parte 7): http://${IP_ACESSO}/wp-admin/install.php"
 else
   echo "Login do painel: ${ADMIN_USER} / ${ADMIN_PASS}"
 fi
 echo
+DEF_IFACE="$(ip route show default 2>/dev/null | awk '/default/{print $5; exit}')"
+if ! ip -o -4 addr show scope global 2>/dev/null \
+      | awk -v def="${DEF_IFACE}" '$2 != def && $2 !~ /^(docker|veth|br-|tun|tap|virbr|lo)/ {achou=1} END {exit !achou}'; then
+  echo "Obs.: a VM parece ter somente a rede NAT (nenhuma interface host-only/bridge"
+  echo "      com IP próprio), por isso o IP acima pode não abrir da hospedeira."
+  echo "      Rode docs/host-nat-portforward.ps1 no PC e acesse http://localhost:8080/"
+  echo
+fi
 if [ "$FAZ_REDE" -eq 0 ]; then
   echo "Dica: para fixar o IP e liberar o domínio, rode: sudo bash ${BASE_DIR}/configurar-rede.sh"
   echo "      (ou use --com-rede no setup; no PC use host/configurar-virtualbox.ps1)"

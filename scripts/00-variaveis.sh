@@ -15,8 +15,41 @@ export DOMINIO="www.${GRUPO}.redes2.internal"           # nome de domínio inter
 export DOMINIO_CURTO="${GRUPO}.redes2.internal"         # variação sem o www (para o ServerAlias)
 
 # --- Dados de rede da VM ------------------------------------------------------
-export IP_SERVIDOR="192.168.56.10"                      # IP fixo da VM (rede host-only/bridge)
+# IP desejado/fixo da VM (rede host-only/bridge). É este valor que o
+# configurar-rede.sh aplica na interface - troque aqui se a sua rede for outra.
+export IP_PADRAO="192.168.56.10"
 export IP_MASCARA="24"                                  # máscara da rede host-only (CIDR)
+
+# Detecta o IP REAL da máquina, para as mensagens mostrarem um endereço que
+# existe de fato na VM nova (o valor fixo antigo fazia o print final exibir
+# sempre o mesmo IP, errado em PCs/VMs com outro range ou DHCP).
+# Ordem de preferência:
+#   1) interface que NÃO é a default e já está na rede planejada (IP_PADRAO);
+#   2) qualquer interface que NÃO é a default (host-only/bridge em outra rede);
+#   3) a interface default (NAT) - último recurso.
+detectar_ip_servidor() {
+  local def_iface rede ip
+  def_iface="$(ip route show default 2>/dev/null | awk '/default/{print $5; exit}')"
+  rede="${IP_PADRAO%.*}."
+
+  ip="$(ip -o -4 addr show scope global 2>/dev/null | awk \
+        -v def="${def_iface}" -v rede="${rede}" \
+        '$2 != def && $2 !~ /^(docker|veth|br-|tun|tap|virbr|lo)/ && index($4, rede) == 1 {split($4, a, "/"); print a[1]; exit}')"
+  if [ -z "${ip}" ]; then
+    ip="$(ip -o -4 addr show scope global 2>/dev/null | awk \
+          -v def="${def_iface}" \
+          '$2 != def && $2 !~ /^(docker|veth|br-|tun|tap|virbr|lo)/ {split($4, a, "/"); print a[1]; exit}')"
+  fi
+  if [ -z "${ip}" ]; then
+    ip="$(ip -o -4 addr show scope global 2>/dev/null | awk \
+          '$2 !~ /^(docker|veth|br-|tun|tap|virbr|lo)/ {split($4, a, "/"); print a[1]; exit}')"
+  fi
+  printf '%s' "${ip}"
+}
+export IP_SERVIDOR="${IP_PADRAO}"                       # fallback caso a detecção falhe
+IP_SERVIDOR="$(detectar_ip_servidor)"
+if [ -z "${IP_SERVIDOR}" ]; then IP_SERVIDOR="${IP_PADRAO}"; fi
+export IP_SERVIDOR
 
 # Nomes que serão resolvidos para o IP_SERVIDOR no /etc/hosts.
 export HOSTS_DOMINIOS="${DOMINIO} ${DOMINIO_CURTO}"

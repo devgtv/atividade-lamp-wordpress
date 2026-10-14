@@ -33,7 +33,7 @@ while [ $# -gt 0 ]; do
     *) echo "Opção desconhecida: $1"; exit 1 ;;
   esac
 done
-[ -z "$CIDR" ] && CIDR="${IP_SERVIDOR}/24"
+[ -z "$CIDR" ] && CIDR="${IP_PADRAO}/${IP_MASCARA}"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "Execute como root: sudo bash $0"
@@ -54,7 +54,7 @@ echo ">>> Interface default : ${DEF_IFACE:-<nenhuma>} (NAT/internet - NÃO mexer
 
 # Escolhe a interface host-only: (1) a que já tem IP na faixa; (2) a que não é a default.
 if [ -z "$IFACE" ]; then
-  REDE="${IP_SERVIDOR%.*}"
+  REDE="${IP_PADRAO%.*}"
   for i in "${UP_IFACES[@]}"; do
     if ip -o -4 addr show "$i" 2>/dev/null | grep -q " ${REDE}\."; then IFACE="$i"; break; fi
   done
@@ -168,6 +168,21 @@ PY
     echo "    Configure manualmente o IP ${CIDR} na interface ${IFACE}."
     ;;
 esac
+
+# ------------------------- Reavalia o IP da VM --------------------------------
+# Depois de aplicar a configuração o IP pode ter mudado (VM nova/outra rede);
+# sem isso as mensagens finais continuariam exibindo o IP antigo.
+if [ "$DRY_RUN" -eq 0 ]; then
+  sleep 1
+  IP_NOVO="$(detectar_ip_servidor)"
+  if [ -n "${IP_NOVO}" ]; then
+    IP_SERVIDOR="${IP_NOVO}"
+  else
+    IP_SERVIDOR="${CIDR%%/*}"
+  fi
+  export IP_SERVIDOR
+  echo ">>> IP da VM agora: ${IP_SERVIDOR}"
+fi
 
 # ----------------------------- Apache ouvindo em todas as interfaces ----------
 if [ -f /etc/apache2/ports.conf ] && [ "$DRY_RUN" -eq 0 ]; then
