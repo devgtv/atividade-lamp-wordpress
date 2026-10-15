@@ -22,7 +22,10 @@
 #   - conclui o WordPress automaticamente (09): cria admin, a página dos
 #     integrantes e a define como página inicial;
 #   - aplica a URL dinâmica (o site passa a funcionar por IP OU domínio);
-#   - verifica a conexão WordPress <-> MariaDB (testar-conexao.sh).
+#   - garante permalinks + .htaccess (garantir-htaccess.sh): faz o /wp-json/
+#     responder JSON, evitando "Updating failed. The response is not a valid
+#     JSON response." no editor de blocos;
+#   - verifica a conexão WordPress <-> MariaDB e a REST API (testar-conexao.sh).
 #
 # Observação: para concluir pelo navegador em vez do PHP, use --sem-finalizar
 # e acesse http://<IP>/wp-admin/install.php.
@@ -38,7 +41,7 @@ FAZ_FINALIZAR=1
 FAZ_VERIFICAR=1
 
 uso() {
-  sed -n '2,29p' "$0"
+  sed -n '2,32p' "$0"
   exit 0
 }
 
@@ -147,6 +150,15 @@ if [ "$FAZ_HTTPS" -eq 1 ]; then
   echo "###################################################################"
   bash "${BASE_DIR}/07-https-opcional.sh"
 fi
+
+# --------- Permalinks + .htaccess (REST API / editor de blocos) ---------------
+# Garante que o /wp-json/ responda JSON. Sem o .htaccess o editor mostra
+# "Updating failed. The response is not a valid JSON response."
+echo
+echo "###################################################################"
+echo "# Garantindo permalinks e .htaccess (garantir-htaccess.sh)"
+echo "###################################################################"
+bash "${BASE_DIR}/garantir-htaccess.sh" || echo "AVISO: revise o .htaccess do WordPress (o editor de blocos pode falhar)."
 
 # --------------------------- Verificação final -------------------------------
 if [ "$FAZ_VERIFICAR" -eq 1 ]; then

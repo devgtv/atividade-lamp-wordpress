@@ -34,6 +34,7 @@ atividade-lamp-wordpress/
 │   ├── 07-https-opcional.sh           # desafio extra: HTTPS autoassinado
 │   ├── 08-testes-logs.sh              # testes com curl e leitura dos logs
 │   ├── 09-finalizar-wordpress.sh      # Parte 7 via PHP (admin + página inicial)
+│   ├── garantir-htaccess.sh           # permalinks + .htaccess (REST API / editor)
 │   ├── chaves-seguranca.sh            # corrige as chaves SALT (funciona offline)
 │   ├── ajustar-url-dinamica.sh        # WordPress aceita IP OU domínio (portátil)
 │   ├── testar-conexao.sh              # valida conexão WordPress <-> MariaDB
@@ -139,6 +140,7 @@ sudo bash scripts/06-virtualhost.sh
 sudo bash scripts/ajustar-url-dinamica.sh    # site funciona por IP ou domínio
 sudo bash scripts/configurar-rede.sh         # IP fixo + /etc/hosts + VirtualHost
 sudo bash scripts/09-finalizar-wordpress.sh  # Parte 7 (PHP) - OU pelo navegador
+sudo bash scripts/garantir-htaccess.sh       # permalinks + .htaccess (REST API)
 bash      scripts/08-testes-logs.sh          # testes (não precisa de root)
 sudo bash scripts/07-https-opcional.sh       # opcional: HTTPS
 ```
@@ -192,9 +194,10 @@ rewrite. O `09-finalizar-wordpress.sh` passou a garantir isso automaticamente
 
 Correção rápida (recria o `.htaccess` e os permalinks):
 ```bash
-sudo bash scripts/09-finalizar-wordpress.sh
-sudo bash scripts/testar-conexao.sh   # o item 8 testa a REST API (wp-json)
+sudo bash scripts/garantir-htaccess.sh   # permalinks + .htaccess (idempotente)
+sudo bash scripts/testar-conexao.sh      # o item 8 testa a REST API (wp-json)
 ```
+O `setup-completo.sh` já executa o `garantir-htaccess.sh` automaticamente ao final.
 
 ## Resumo das partes do roteiro
 
@@ -207,6 +210,7 @@ sudo bash scripts/testar-conexao.sh   # o item 8 testa a REST API (wp-json)
 | 5 | Download/instalação do WordPress | `05-wordpress.sh` |
 | 6 | VirtualHost do Apache | `06-virtualhost.sh` |
 | 7 | Configuração (navegador ou PHP) | `09-finalizar-wordpress.sh` |
+| 7.1 | Permalinks + `.htaccess` (REST API) | `garantir-htaccess.sh` |
 | 8 | Testes e logs | `08-testes-logs.sh` |
 | 9 | Captura no Wireshark | `docs/02-wireshark.md` |
 | Extra | HTTPS autoassinado | `07-https-opcional.sh` |

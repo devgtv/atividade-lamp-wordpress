@@ -136,31 +136,6 @@ if ( $wp_rewrite ) {
     $wp_rewrite->flush_rules( true );
 }
 fwrite( STDOUT, "Permalinks amigáveis ativados.\n" );
-
-// --------------------------- Garante o .htaccess -----------------------------
-// Rede de segurança: se o flush acima não gravou o .htaccess (muito comum ao
-// rodar por CLI), gravamos o bloco padrão do WordPress na mão. É ESTE arquivo
-// que faz /wp-json/ funcionar (REST API usada pelo editor de blocos).
-$htaccess = rtrim( ABSPATH, '/' ) . '/.htaccess';
-$conteudo = is_readable( $htaccess ) ? (string) file_get_contents( $htaccess ) : '';
-if ( strpos( $conteudo, 'BEGIN WordPress' ) === false ) {
-    $regras = "<IfModule mod_rewrite.c>\n"
-        . "RewriteEngine On\n"
-        . "RewriteBase /\n"
-        . "RewriteRule ^index\\.php$ - [L]\n"
-        . "RewriteCond %{REQUEST_FILENAME} !-f\n"
-        . "RewriteCond %{REQUEST_FILENAME} !-d\n"
-        . "RewriteRule . /index.php [L]\n"
-        . "</IfModule>";
-    if ( function_exists( 'insert_with_markers' ) ) {
-        insert_with_markers( $htaccess, 'WordPress', explode( "\n", $regras ) );
-    } else {
-        file_put_contents( $htaccess, "# BEGIN WordPress\n{$regras}\n# END WordPress\n" );
-    }
-    fwrite( STDOUT, "Arquivo .htaccess criado/atualizado (necessário para o REST API).\n" );
-} else {
-    fwrite( STDOUT, "Arquivo .htaccess já contém as regras do WordPress (ok).\n" );
-}
 PHP
 
 echo ">>> Concluindo a instalação do WordPress (via PHP)..."
@@ -184,6 +159,11 @@ else
   exit 1
 fi
 rm -f "${INSTALADOR}"
+
+# Garante permalinks + .htaccess (REST API /wp-json/). Sem isso o editor dá
+# "Updating failed. The response is not a valid JSON response."
+BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
+bash "${BASE_DIR}/garantir-htaccess.sh" || echo "AVISO: revise o .htaccess do WordPress."
 
 echo
 echo ">>> Concluído! Acesse no navegador da hospedeira:"
