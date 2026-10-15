@@ -181,6 +181,21 @@ válido e nunca versione o `wp-config.php` (já está no `.gitignore`).
 
 ---
 
+## Problemas comuns
+
+### "Updating failed. The response is not a valid JSON response." no painel
+Acontece quando o editor de blocos chama a REST API (`/wp-json/...`) e recebe um
+**404 em HTML** em vez de JSON — normalmente porque os permalinks estão "bonitos"
+(`/%postname%/`) mas o arquivo **`.htaccess`** não existe/está sem as regras de
+rewrite. O `09-finalizar-wordpress.sh` passou a garantir isso automaticamente
+(antes, rodando por CLI, o WordPress não gravava o `.htaccess`).
+
+Correção rápida (recria o `.htaccess` e os permalinks):
+```bash
+sudo bash scripts/09-finalizar-wordpress.sh
+sudo bash scripts/testar-conexao.sh   # o item 8 testa a REST API (wp-json)
+```
+
 ## Resumo das partes do roteiro
 
 | Parte | Descrição | Script |

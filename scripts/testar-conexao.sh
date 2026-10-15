@@ -93,6 +93,23 @@ else
   echo "  [--]    PHP/wp-config indisponível; pulando"
 fi
 
+# --- 8) REST API do WordPress (usada pelo editor de blocos) -------------------
+# É o que gera o erro "Updating failed. The response is not a valid JSON response."
+# quando o .htaccess/rewrite está faltando (permalinks bonitos sem regras).
+echo "8) REST API do WordPress (wp-json) - usada pelo editor"
+if command -v curl >/dev/null 2>&1 && command -v php >/dev/null 2>&1 && [ -f "${WP_DIR}/wp-config.php" ]; then
+  REST_ROOT="$(sudo -u www-data php -r \
+    "\$_SERVER['SERVER_SOFTWARE']='Apache/2.4'; \$_SERVER['HTTP_HOST']='localhost'; \$_SERVER['SERVER_PORT']='80'; require '${WP_DIR}/wp-load.php'; echo rest_url();" 2>/dev/null)"
+  if [ -n "${REST_ROOT}" ] && curl -s -m 8 "${REST_ROOT}" | grep -q '^{'; then
+    ok "REST API responde JSON em ${REST_ROOT}"
+  else
+    falha "REST API NÃO retornou JSON (${REST_ROOT:-indefinido}) -> o editor dará 'not a valid JSON response'"
+    echo "          Correção: sudo bash scripts/09-finalizar-wordpress.sh (recria o .htaccess)"
+  fi
+else
+  echo "  [--]    curl/PHP/WordPress indisponível; pulando"
+fi
+
 echo "==================================================================="
 echo " RESUMO: ${OK} OK, ${FAIL} FALHA(S)"
 [ "${FAIL}" -eq 0 ] && echo " => Conexão automática FUNCIONANDO." || echo " => Há falhas; revise os itens acima."
